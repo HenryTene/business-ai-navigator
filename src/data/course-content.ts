@@ -1,5 +1,5 @@
 import {
-  BarChart3, Boxes, BriefcaseBusiness, Building2, CircleDollarSign,
+  BarChart3, BriefcaseBusiness, Building2, CircleDollarSign,
   ClipboardList, Headphones, Megaphone, PackageSearch, Settings2, Users,
 } from "lucide-react";
 
