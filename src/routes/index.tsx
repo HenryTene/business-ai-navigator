@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowRight, Building2, Check, ChevronLeft, ChevronRight, Menu, ShieldCheck, X } from "lucide-react";
+import { ArrowDown, ArrowRight, BriefcaseBusiness, Building2, Check, ChevronLeft, ChevronRight, Home, Menu, PanelLeftClose, PanelLeftOpen, Route as RouteIcon, ShieldCheck, Sparkles, Target, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Feedback, KPIBadge, ProcessFlow, ResetButton, RiskCard, SectionHeading } from "@/components/learning-ui";
 import { areas, courseRoute, flow, problemMaps, risks, scenarios } from "@/data/course-content";
@@ -16,43 +16,66 @@ export const Route = createFileRoute("/")({
   ]}), component: Index,
 });
 
-const sectionIds = ["inicio","explorar","simulador","nova","reto","ruta"];
-const navItems: ReadonlyArray<readonly [string, string]> = [["inicio","Inicio"],["explorar","Explorar empresa"],["simulador","Simulador"],["nova","Caso NOVA"],["reto","Reto"],["ruta","Ruta"]];
+const navItems = [
+ {id:"inicio",label:"Inicio",icon:Home},
+ {id:"explorar",label:"Explorar empresa",icon:Building2},
+ {id:"simulador",label:"Simulador",icon:Sparkles},
+ {id:"nova",label:"Caso NOVA",icon:BriefcaseBusiness},
+ {id:"reto",label:"Reto final",icon:Target},
+ {id:"ruta",label:"Ruta del curso",icon:RouteIcon},
+] as const;
+const sectionIds = navItems.map(item=>item.id);
 
 function Index() {
  const [visited,setVisited]=useState(new Set(["inicio"]));
+ const [active,setActive]=useState("inicio");
  const [menu,setMenu]=useState(false);
- useEffect(()=>{ const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)setVisited(v=>new Set(v).add(e.target.id))}),{threshold:.2}); sectionIds.forEach(id=>{const el=document.getElementById(id);if(el)obs.observe(el)}); return()=>obs.disconnect()},[]);
- const go=(id:string)=>{document.getElementById(id)?.scrollIntoView({behavior:"smooth"});setMenu(false)};
+ const [collapsed,setCollapsed]=useState(false);
+ useEffect(()=>{ const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){setActive(e.target.id);setVisited(v=>new Set(v).add(e.target.id))}}),{rootMargin:"-20% 0px -65%",threshold:0}); sectionIds.forEach(id=>{const el=document.getElementById(id);if(el)obs.observe(el)}); return()=>obs.disconnect()},[]);
+ const go=(id:string)=>{setActive(id);document.getElementById(id)?.scrollIntoView({behavior:"smooth"});setMenu(false)};
  return <div className="min-h-screen overflow-x-hidden bg-background font-display text-foreground selection:bg-accent/30">
    <div className="ambient ambient-a"/><div className="ambient ambient-b"/>
-   <Header visited={visited.size} menu={menu} setMenu={setMenu} go={go}/>
-   <main className="relative z-10">
-    <Welcome onStart={()=>go("apertura")}/>
-    <Opening onNext={()=>go("modelo")}/>
-    <CentralModel/>
-    <BusinessExplorer/>
-    <BeforeAfter/>
-    <Simulator/>
-    <ProblemLab/>
-    <NovaCase/>
-    <HumanAI/>
-    <Risks/>
-    <FinalChallenge/>
-    <Roadmap/>
-   </main>
-   <Footer/>
+   <Sidebar active={active} visited={visited} collapsed={collapsed} setCollapsed={setCollapsed} go={go}/>
+   <MobileHeader visited={visited.size} menu={menu} setMenu={setMenu} active={active} go={go}/>
+   <div className={`relative transition-[margin] duration-300 ${collapsed?"md:ml-16":"md:ml-64"}`}>
+    <main className="relative z-10">
+     <Welcome onStart={()=>go("apertura")}/>
+     <Opening onNext={()=>go("modelo")}/>
+     <CentralModel/>
+     <BusinessExplorer/>
+     <BeforeAfter/>
+     <Simulator/>
+     <ProblemLab/>
+     <NovaCase/>
+     <HumanAI/>
+     <Risks/>
+     <FinalChallenge/>
+     <Roadmap/>
+    </main>
+    <Footer/>
+   </div>
  </div>
 }
 
-function Header({visited,menu,setMenu,go}:{visited:number;menu:boolean;setMenu:(v:boolean)=>void;go:(id:string)=>void}) {
- return <header className="sticky top-0 z-50 border-b border-line bg-background/80 backdrop-blur-xl">
-  <div className="mx-auto flex max-w-[1240px] items-center gap-4 px-4 py-3 sm:px-6"><button onClick={()=>go("inicio")} className="flex items-center gap-2" aria-label="Ir al inicio"><span className="grid size-8 place-items-center rounded-md bg-accent font-mono text-xs font-bold text-accent-ink">AI</span><span className="hidden text-xs font-bold uppercase tracking-[0.18em] sm:block">Business Explorer</span></button><span className="rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-mono text-[9px] uppercase tracking-widest text-accent">Masterclass</span>
-  <nav className="ml-auto hidden items-center gap-1 lg:flex" aria-label="Navegación principal">{navItems.map(([id,label])=><button key={id} onClick={()=>go(id)} className="rounded-md px-3 py-2 text-xs text-muted-foreground transition hover:bg-glass hover:text-foreground">{label}</button>)}</nav>
-  <button onClick={()=>setMenu(!menu)} className="ml-auto grid size-9 place-items-center rounded-md border border-line lg:hidden" aria-label="Abrir menú">{menu?<X/>:<Menu/>}</button></div>
-  {menu&&<nav className="grid border-t border-line bg-surface p-3 lg:hidden">{navItems.map(([id,label])=><button key={id} onClick={()=>go(id)} className="px-3 py-3 text-left text-sm">{label}</button>)}</nav>}
-  <div className="h-0.5 bg-line"><div className="h-full bg-accent transition-all duration-500" style={{width:`${Math.round(visited/sectionIds.length*100)}%`}}/></div>
-  <div className="mx-auto max-w-[1240px] px-4 py-1.5 font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground sm:px-6">Progreso de exploración · {visited} de {sectionIds.length} secciones</div>
+function Sidebar({active,visited,collapsed,setCollapsed,go}:{active:string;visited:Set<string>;collapsed:boolean;setCollapsed:(v:boolean)=>void;go:(id:string)=>void}) {
+ const progress=Math.round(visited.size/sectionIds.length*100);
+ return <aside className={`fixed inset-y-0 left-0 z-50 hidden border-r border-line bg-background/95 backdrop-blur-xl transition-[width] duration-300 md:flex md:flex-col ${collapsed?"w-16":"w-64"}`}>
+  <div className="grid h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-line px-3">
+   <Button variant="ghost" className="min-w-0 justify-start px-1" onClick={()=>go("inicio")} aria-label="Ir al inicio"><span className="grid size-8 shrink-0 place-items-center rounded-md bg-accent font-mono text-xs font-bold text-accent-ink">AI</span>{!collapsed&&<span className="truncate text-xs font-bold uppercase">Business Explorer</span>}</Button>
+   {!collapsed&&<Button variant="ghost" size="icon" onClick={()=>setCollapsed(true)} aria-label="Contraer menú lateral" title="Contraer menú"><PanelLeftClose/></Button>}
+  </div>
+  <div className="border-b border-line px-4 py-4">{collapsed?<Button variant="ghost" size="icon" onClick={()=>setCollapsed(false)} aria-label="Expandir menú lateral" title="Expandir menú"><PanelLeftOpen/></Button>:<><div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3"><span className="font-mono text-[9px] uppercase text-muted-foreground">Progreso</span><span className="font-mono text-[9px] text-accent">{progress}%</span></div><div className="mt-2 h-1 overflow-hidden rounded-full bg-line"><div className="h-full bg-accent transition-all duration-500" style={{width:`${progress}%`}}/></div><p className="mt-2 text-[10px] text-muted-foreground">{visited.size} de {sectionIds.length} temas explorados</p></>}</div>
+  <nav className="flex-1 space-y-1 overflow-y-auto p-2" aria-label="Temas de la masterclass">{navItems.map(({id,label,icon:Icon})=><Button key={id} variant="ghost" onClick={()=>go(id)} aria-current={active===id?"location":undefined} title={collapsed?label:undefined} className={`h-11 w-full ${collapsed?"justify-center px-0":"justify-start px-3"} ${active===id?"bg-accent/10 text-accent":"text-muted-foreground hover:text-foreground"}`}><Icon className="shrink-0"/>{!collapsed&&<span className="truncate">{label}</span>}{!collapsed&&visited.has(id)&&<Check className="ml-auto size-3.5 text-accent"/>}</Button>)}</nav>
+  {!collapsed&&<div className="border-t border-line p-4"><span className="inline-flex rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-mono text-[9px] uppercase text-accent">Masterclass</span><p className="mt-3 text-xs leading-relaxed text-muted-foreground">IA aplicada a la Gestión Empresarial</p></div>}
+ </aside>
+}
+
+function MobileHeader({visited,menu,setMenu,active,go}:{visited:number;menu:boolean;setMenu:(v:boolean)=>void;active:string;go:(id:string)=>void}) {
+ const progress=Math.round(visited/sectionIds.length*100);
+ return <header className="sticky top-0 z-50 border-b border-line bg-background/90 backdrop-blur-xl md:hidden">
+  <div className="grid h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4"><Button variant="ghost" className="min-w-0 justify-start px-0" onClick={()=>go("inicio")}><span className="grid size-8 shrink-0 place-items-center rounded-md bg-accent font-mono text-xs font-bold text-accent-ink">AI</span><span className="truncate text-xs font-bold uppercase">Business Explorer</span></Button><Button variant="outline" size="icon" onClick={()=>setMenu(!menu)} aria-expanded={menu} aria-label={menu?"Cerrar menú":"Abrir menú"}>{menu?<X/>:<Menu/>}</Button></div>
+  <div className="h-0.5 bg-line"><div className="h-full bg-accent transition-all duration-500" style={{width:`${progress}%`}}/></div>
+  {menu&&<nav className="absolute inset-x-0 top-full grid max-h-[calc(100vh-3.5rem)] gap-1 overflow-y-auto border-b border-line bg-surface p-3 shadow-xl" aria-label="Temas de la masterclass">{navItems.map(({id,label,icon:Icon})=><Button key={id} variant="ghost" onClick={()=>go(id)} className={`h-12 justify-start ${active===id?"bg-accent/10 text-accent":"text-muted-foreground"}`}><Icon/>{label}</Button>)}</nav>}
  </header>
 }
 
