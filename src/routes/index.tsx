@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowRight, BookOpen, BriefcaseBusiness, Building2, Check, ChevronLeft, ChevronRight, Home, Map, Menu, PanelLeftClose, PanelLeftOpen, Route as RouteIcon, ShieldCheck, Sparkles, Target, X } from "lucide-react";
+import { ArrowDown, ArrowRight, BriefcaseBusiness, Building2, Check, ChevronLeft, ChevronRight, Home, Menu, PanelLeftClose, PanelLeftOpen, Route as RouteIcon, ShieldCheck, Sparkles, Target, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Feedback, KPIBadge, ProcessFlow, ResetButton, RiskCard, SectionHeading } from "@/components/learning-ui";
 import { areas, courseRoute, flow, problemMaps, risks, scenarios } from "@/data/course-content";
@@ -37,7 +37,7 @@ function Index() {
    <div className="ambient ambient-a"/><div className="ambient ambient-b"/>
    <Sidebar active={active} visited={visited} collapsed={collapsed} setCollapsed={setCollapsed} go={go}/>
    <MobileHeader visited={visited.size} menu={menu} setMenu={setMenu} active={active} go={go}/>
-   <div className={`relative transition-[margin] duration-300 md:${collapsed?"ml-16":"ml-64"}`}>
+   <div className={`relative transition-[margin] duration-300 ${collapsed?"md:ml-16":"md:ml-64"}`}>
     <main className="relative z-10">
      <Welcome onStart={()=>go("apertura")}/>
      <Opening onNext={()=>go("modelo")}/>
